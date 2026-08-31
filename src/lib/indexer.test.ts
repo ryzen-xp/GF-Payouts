@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { formatAmount, toBigInt } from "./amounts.ts"
 import { withOrigin } from "./network.ts"
-import { errorMessage } from "./http.ts"
+import { errorMessage, isRetryableExpertError, summarizeHttpBody } from "./http.ts"
 import { parseMilestoneDescription } from "./milestone.ts"
 import { parseEscrow } from "./escrow.ts"
 import { walletRolesForEscrow } from "./match.ts"
@@ -135,6 +135,22 @@ describe("errorMessage", () => {
     expect(errorMessage({ message: "rpc failed", status: 500 })).toBe("rpc failed")
     expect(errorMessage({ code: 1, detail: "timeout" })).toBe("timeout")
     expect(errorMessage({ foo: "bar" })).toContain("foo")
+  })
+})
+
+describe("summarizeHttpBody", () => {
+  it("does not dump Cloudflare HTML into the toast", () => {
+    expect(
+      summarizeHttpBody("<!DOCTYPE html><!--[if lt IE 7]> cloudflare attention required"),
+    ).toBe("blocked by Cloudflare")
+    expect(summarizeHttpBody('{"error":"nope"}')).toBe('{"error":"nope"}')
+  })
+
+  it("does not retry Expert 403", () => {
+    expect(isRetryableExpertError(new Error("StellarExpert 403: blocked by Cloudflare"))).toBe(
+      false,
+    )
+    expect(isRetryableExpertError(new Error("StellarExpert 402"))).toBe(true)
   })
 })
 

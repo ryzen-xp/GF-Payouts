@@ -1,4 +1,12 @@
-import { errorMessage, isAbortError, rewriteToProxy, sleep, throwIfAborted } from "./http.ts"
+import {
+  errorMessage,
+  isAbortError,
+  isRetryableExpertError,
+  rewriteToProxy,
+  sleep,
+  summarizeHttpBody,
+  throwIfAborted,
+} from "./http.ts"
 import type { NetworkConfig } from "./types.ts"
 
 export type ExpertTx = {
@@ -36,16 +44,13 @@ async function getJson(url: string, signal?: AbortSignal): Promise<ExpertPage> {
       }
       if (!response.ok) {
         const body = await response.text()
-        const err = new Error(`StellarExpert ${response.status}: ${body.slice(0, 180)}`)
-        if (response.status < 500) throw err
-        lastError = err.message
-        await sleep(800 * 2 ** attempt, signal)
-        continue
+        throw new Error(`StellarExpert ${response.status}: ${summarizeHttpBody(body)}`)
       }
       return (await response.json()) as ExpertPage
     } catch (error) {
       if (isAbortError(error)) throw error
       lastError = errorMessage(error)
+      if (!isRetryableExpertError(error)) throw error instanceof Error ? error : new Error(lastError)
       await sleep(800 * 2 ** attempt, signal)
     }
   }

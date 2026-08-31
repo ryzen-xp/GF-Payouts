@@ -48,6 +48,29 @@ export function rewriteToProxy(next: string, proxyBase: string, publicHosts: str
   return next
 }
 
+export function summarizeHttpBody(body: string, max = 180): string {
+  const trimmed = body.trim()
+  if (!trimmed) return ""
+  if (/^\s*</.test(trimmed)) {
+    if (/cloudflare|attention required|captcha|cf-error|just a moment/i.test(trimmed)) {
+      return "blocked by Cloudflare"
+    }
+    return "HTML error page"
+  }
+  return trimmed.slice(0, max)
+}
+
+function expertStatus(message: string): number {
+  const match = message.match(/StellarExpert (\d{3})/)
+  return match ? Number(match[1]) : 0
+}
+
+export function isRetryableExpertError(error: unknown): boolean {
+  const status = expertStatus(errorMessage(error))
+  if (!status) return true
+  return status === 402 || status === 429 || status >= 500
+}
+
 export function errorMessage(error: unknown): string {
   if (typeof error === "string" && error.trim()) return error
   if (error instanceof Error) {

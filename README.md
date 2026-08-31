@@ -37,7 +37,7 @@ npm i -g vercel
 vercel
 ```
 
-`vercel.json` rewrites `/horizon` and `/rpc` upstream, and `/expert` through `api/expert/[...path].ts` (adds the headers StellarExpert requires, caches 45s).
+`vercel.json` rewrites `/horizon` and `/rpc` upstream, and `/expert` through `api/expert.ts` (Node, not Edge — StellarExpert sits behind Cloudflare, which blocks Vercel Edge fetches). The function adds the Referer StellarExpert requires and caches 45s.
 
 | Variable | Meaning |
 | --- | --- |
