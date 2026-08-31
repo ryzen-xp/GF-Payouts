@@ -1,0 +1,52 @@
+:root {
+  --text: #f6efe6;
+  --muted: #b7a99a;
+  --bg: #0b0a09;
+  --panel: rgba(28, 24, 21, 0.78);
+  --line: rgba(255, 214, 170, 0.14);
+  --accent: #ff8a5b;
+  --mint: #7dffe1;
+  --ink: #1a0f0a;
+  --sans: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", "Figtree", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", monospace;
+  color: var(--text);
+  background: var(--bg);
+  font: 16px/1.5 var(--sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(900px 520px at 8% -8%, rgba(255, 138, 91, 0.18), transparent 55%),
+    radial-gradient(700px 420px at 100% 0%, rgba(125, 255, 225, 0.1), transparent 46%),
+    var(--bg);
+}
+
+.crash {
+  max-width: 520px;
+  margin: 12vh auto;
+  padding: 24px;
+}
+
+.crash pre {
+  overflow: auto;
+  padding: 12px;
+  background: #171411;
+  border-radius: 12px;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}

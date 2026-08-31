@@ -1,0 +1,38 @@
+{
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/horizon/:path*",
+      "destination": "https://horizon.stellar.org/:path*"
+    },
+    {
+      "source": "/rpc",
+      "destination": "https://mainnet.sorobanrpc.com/"
+    },
+    {
+      "source": "/rpc/",
+      "destination": "https://mainnet.sorobanrpc.com/"
+    },
+    {
+      "source": "/testnet/horizon/:path*",
+      "destination": "https://horizon-testnet.stellar.org/:path*"
+    },
+    {
+      "source": "/testnet/rpc",
+      "destination": "https://soroban-testnet.stellar.org/"
+    },
+    {
+      "source": "/testnet/rpc/",
+      "destination": "https://soroban-testnet.stellar.org/"
+    },
+    {
+      "source": "/expert/:path*",
+      "destination": "/api/expert/:path*"
+    }
+  ]
+}
