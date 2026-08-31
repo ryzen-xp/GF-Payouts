@@ -4,6 +4,7 @@ import { formatAmount } from "./lib/amounts.ts"
 import { downloadText, printResults, rowsToCsv, rowsToMarkdown } from "./lib/export.ts"
 import { isAbortError } from "./lib/http.ts"
 import { getNetwork } from "./lib/network.ts"
+import { Presence } from "./Presence.tsx"
 import { Toasts, useToasts } from "./Toasts.tsx"
 import type { LookupProgress, LookupResult, MilestoneRow, ScanMode } from "./lib/types.ts"
 import "./App.css"
@@ -125,6 +126,7 @@ function App() {
             </p>
           </div>
         </div>
+        <Presence />
       </header>
 
       <form className="search" onSubmit={onSubmit}>
