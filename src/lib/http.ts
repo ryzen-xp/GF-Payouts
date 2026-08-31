@@ -47,3 +47,25 @@ export function rewriteToProxy(next: string, proxyBase: string, publicHosts: str
   }
   return next
 }
+
+export function errorMessage(error: unknown): string {
+  if (typeof error === "string" && error.trim()) return error
+  if (error instanceof Error) {
+    if (error.message && error.message !== "[object Object]") return error.message
+    if (error.cause) return errorMessage(error.cause)
+  }
+  if (error && typeof error === "object") {
+    const record = error as Record<string, unknown>
+    if (typeof record.message === "string" && record.message !== "[object Object]") {
+      return record.message
+    }
+    if (typeof record.detail === "string") return record.detail
+    try {
+      const text = JSON.stringify(error)
+      if (text && text !== "{}" && text !== "null") return text.slice(0, 240)
+    } catch {
+      // ignore
+    }
+  }
+  return "Unknown error"
+}

@@ -31,8 +31,8 @@
       "destination": "https://soroban-testnet.stellar.org/"
     },
     {
-      "source": "/expert/:path*",
-      "destination": "/api/expert/:path*"
+      "source": "/expert/:path(.*)",
+      "destination": "/api/expert?path=:path"
     }
   ]
 }

@@ -11,7 +11,7 @@ import { parseInvokesFromEnvelope, parseReturnContractId } from "./envelope.ts"
 import { parseEscrow } from "./escrow.ts"
 import { fetchFactoryTxs, type ExpertTx } from "./expert.ts"
 import { accountExists, fetchAccountOperations, fetchTransactionOperations, type HorizonOperation } from "./horizon.ts"
-import { isAbortError, throwIfAborted } from "./http.ts"
+import { errorMessage, isAbortError, throwIfAborted } from "./http.ts"
 import { walletInvolved } from "./match.ts"
 import { DEFAULT_DECIMALS } from "./network.ts"
 import { compareRowsNewestFirst, rowsForEscrow } from "./rows.ts"
@@ -320,7 +320,7 @@ export async function lookupWallet(
     } catch (error) {
       if (isAbortError(error)) throw error
       warnings.push(
-        `Factory scan skipped: ${error instanceof Error ? error.message : String(error)}`,
+        `Factory scan skipped: ${errorMessage(error)}`,
       )
       }
     }
@@ -342,7 +342,7 @@ export async function lookupWallet(
     } catch (error) {
       if (isAbortError(error)) throw error
       warnings.push(
-        `Could not read operations for ${account}: ${error instanceof Error ? error.message : String(error)}`,
+        `Could not read operations for ${account}: ${errorMessage(error)}`,
       )
     }
   }
@@ -363,7 +363,7 @@ export async function lookupWallet(
     } catch (error) {
       if (isAbortError(error)) throw error
       warnings.push(
-        `RPC event scan skipped: ${error instanceof Error ? error.message : String(error)}`,
+        `RPC event scan skipped: ${errorMessage(error)}`,
       )
     }
   }

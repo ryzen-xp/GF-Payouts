@@ -9,6 +9,22 @@ function cors(): Record<string, string> {
   }
 }
 
+function destFrom(request: Request): string {
+  const url = new URL(request.url)
+  const pathParam = url.searchParams.get("path")
+  url.searchParams.delete("path")
+  let suffix = pathParam ?? ""
+  if (!suffix) {
+    const marker = "/api/expert"
+    const at = url.pathname.indexOf(marker)
+    suffix =
+      at >= 0 ? url.pathname.slice(at + marker.length) : url.pathname.replace(/^\/expert/, "")
+  }
+  if (suffix && !suffix.startsWith("/")) suffix = `/${suffix}`
+  const query = url.searchParams.toString()
+  return `${UPSTREAM}${suffix || "/"}${query ? `?${query}` : ""}`
+}
+
 export default async function handler(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: cors() })
@@ -21,12 +37,7 @@ export default async function handler(request: Request): Promise<Response> {
   }
 
   try {
-    const incoming = new URL(request.url)
-    const marker = "/api/expert"
-    const at = incoming.pathname.indexOf(marker)
-    const suffix =
-      at >= 0 ? incoming.pathname.slice(at + marker.length) : incoming.pathname.replace(/^\/expert/, "")
-    const dest = `${UPSTREAM}${suffix || "/"}${incoming.search}`
+    const dest = destFrom(request)
     const upstream = await fetch(dest, {
       headers: {
         Accept: "application/json",

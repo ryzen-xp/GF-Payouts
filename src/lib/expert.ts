@@ -1,4 +1,4 @@
-import { isAbortError, rewriteToProxy, sleep, throwIfAborted } from "./http.ts"
+import { errorMessage, isAbortError, rewriteToProxy, sleep, throwIfAborted } from "./http.ts"
 import type { NetworkConfig } from "./types.ts"
 
 export type ExpertTx = {
@@ -45,7 +45,7 @@ async function getJson(url: string, signal?: AbortSignal): Promise<ExpertPage> {
       return (await response.json()) as ExpertPage
     } catch (error) {
       if (isAbortError(error)) throw error
-      lastError = error instanceof Error ? error.message : String(error)
+      lastError = errorMessage(error)
       await sleep(800 * 2 ** attempt, signal)
     }
   }

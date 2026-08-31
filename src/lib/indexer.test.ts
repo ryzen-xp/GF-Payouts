@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { formatAmount, toBigInt } from "./amounts.ts"
 import { withOrigin } from "./network.ts"
+import { errorMessage } from "./http.ts"
 import { parseMilestoneDescription } from "./milestone.ts"
 import { parseEscrow } from "./escrow.ts"
 import { walletRolesForEscrow } from "./match.ts"
@@ -126,6 +127,14 @@ describe("withOrigin", () => {
     expect(withOrigin("/testnet/rpc", "http://localhost:5173")).toBe(
       "http://localhost:5173/testnet/rpc",
     )
+  })
+})
+
+describe("errorMessage", () => {
+  it("does not stringify objects as [object Object]", () => {
+    expect(errorMessage({ message: "rpc failed", status: 500 })).toBe("rpc failed")
+    expect(errorMessage({ code: 1, detail: "timeout" })).toBe("timeout")
+    expect(errorMessage({ foo: "bar" })).toContain("foo")
   })
 })
 
