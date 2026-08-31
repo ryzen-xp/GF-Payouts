@@ -1,65 +1,88 @@
-export const config = { runtime: "nodejs", maxDuration: 10 }
+export const config = { runtime: "edge" }
 
-import { handlePresence } from "../src/lib/presence-store.ts"
+const ID = /^[A-Za-z0-9_-]{8,80}$/
+const TTL_MS = 45_000
 
-type NodeReq = {
-  method?: string
-  url?: string
-  headers: Record<string, string | string[] | undefined>
-  body?: unknown
-  on: (event: "data" | "end" | "error", fn: (chunk?: Buffer) => void) => void
+type Stats = { online: number; visits: number }
+type Memory = { sessions: Map<string, number>; visitors: Set<string>; visits: number }
+
+const g = globalThis as typeof globalThis & { __gfPresence?: Memory }
+
+function store(): Memory {
+  if (!g.__gfPresence) {
+    g.__gfPresence = { sessions: new Map(), visitors: new Set(), visits: 0 }
+  }
+  return g.__gfPresence
 }
 
-type NodeRes = {
-  statusCode: number
-  setHeader: (name: string, value: string) => void
-  end: (body?: string | Buffer) => void
+function prune(now: number) {
+  const state = store()
+  for (const [id, seen] of state.sessions) {
+    if (now - seen > TTL_MS) state.sessions.delete(id)
+  }
 }
 
-function readBody(req: NodeReq): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    req.on("data", (chunk) => {
-      if (chunk) chunks.push(chunk)
-    })
-    req.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")))
-    req.on("error", () => reject(new Error("body")))
+function snapshot(now = Date.now()): Stats {
+  prune(now)
+  const state = store()
+  return { online: state.sessions.size, visits: state.visits }
+}
+
+function tick(
+  sessionId: string,
+  visitorId: string,
+  left: boolean,
+  now = Date.now(),
+): Stats {
+  prune(now)
+  const state = store()
+  if (left) {
+    state.sessions.delete(sessionId)
+  } else {
+    state.sessions.set(sessionId, now)
+    if (!state.visitors.has(visitorId)) {
+      state.visitors.add(visitorId)
+      state.visits += 1
+    }
+  }
+  return { online: state.sessions.size, visits: state.visits }
+}
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "content-type": "application/json",
+      "cache-control": "no-store",
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "GET, POST, OPTIONS",
+      "access-control-allow-headers": "content-type",
+    },
   })
 }
 
-export default async function handler(req: NodeReq, res: NodeRes) {
-  res.setHeader("access-control-allow-origin", "*")
-  res.setHeader("access-control-allow-methods", "GET, POST, OPTIONS")
-  res.setHeader("access-control-allow-headers", "content-type")
-  res.setHeader("cache-control", "no-store")
-
-  if (req.method === "OPTIONS") {
-    res.statusCode = 204
-    res.end()
-    return
-  }
-
-  let body: unknown = null
-  if ("body" in req && req.body && typeof req.body === "object") {
-    body = req.body
-  } else if (req.method === "POST") {
-    try {
-      const raw = await readBody(req)
-      body = raw ? JSON.parse(raw) : {}
-    } catch {
-      res.statusCode = 400
-      res.setHeader("content-type", "application/json")
-      res.end(JSON.stringify({ error: "Bad request" }))
-      return
+export default async function handler(request: Request): Promise<Response> {
+  try {
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "GET, POST, OPTIONS",
+          "access-control-allow-headers": "content-type",
+        },
+      })
     }
-  }
+    if (request.method === "GET") return json(snapshot())
+    if (request.method !== "POST") return json({ error: "Method not allowed" }, 405)
 
-  const result = await handlePresence(req.method ?? "GET", body)
-  res.statusCode = result.status
-  if (result.status === 204) {
-    res.end()
-    return
+    const body: unknown = await request.json().catch(() => null)
+    const record = body && typeof body === "object" ? (body as Record<string, unknown>) : null
+    const sessionId = String(record?.sessionId ?? "")
+    const visitorId = String(record?.visitorId ?? "")
+    if (!ID.test(sessionId) || !ID.test(visitorId)) return json({ error: "Bad request" }, 400)
+    return json(tick(sessionId, visitorId, record?.left === true))
+  } catch {
+    return json({ error: "Presence failed" }, 500)
   }
-  res.setHeader("content-type", "application/json")
-  res.end(JSON.stringify(result.json))
 }
