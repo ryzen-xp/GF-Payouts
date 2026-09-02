@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type FormEvent } from "react"
+import { Analytics } from "@vercel/analytics/react"
 import { shortAddress } from "./lib/addresses.ts"
 import { formatAmount } from "./lib/amounts.ts"
 import { downloadText, printResults, rowsToCsv, rowsToMarkdown } from "./lib/export.ts"
@@ -384,6 +385,7 @@ function App() {
           />
         </label>
       </details>
+      <Analytics />
     </div>
   )
 }
